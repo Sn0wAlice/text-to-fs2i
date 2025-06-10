@@ -12,7 +12,9 @@ async fn main() {
 
     let output = serde_json::to_string(&fs2i_json)
         .expect("Failed to convert to JSON string");
-    println!("{}", output);
+
+    std::fs::write("fs2i.json", output)
+        .expect("Failed to write fs2i.json");
 }
 
 async fn convert_to_fs2i(text: &str) -> Value {
@@ -81,14 +83,11 @@ async fn chunk_text(text: &str) -> Vec<Value> {
         all_chunks.push(chunk_json);
     }
 
-    std::fs::write("tmp.json", serde_json::to_string(&all_chunks).unwrap())
-        .expect("Failed to write chunks to file");
-
     chunks
 }
 
 
-pub async fn vectorize_text_simple(texts: Vec<String>) -> Vec<Vec<String>> {
+pub async fn vectorize_text_simple(texts: Vec<String>) -> Vec<Vec<f32>> {
     let client = Client::new();
 
     // Récupération du modèle dyn
@@ -98,8 +97,8 @@ pub async fn vectorize_text_simple(texts: Vec<String>) -> Vec<Vec<String>> {
     let embeddings_vec = model.embed_texts(texts).await; // ✅ méthode correcte ici
     let embeddings_vec = embeddings_vec.unwrap_or_else(|_| vec![]);
 
-    return embeddings_vec
+    embeddings_vec
         .into_iter()
-        .map(|e| e.vec.into_iter().map(|v| v.to_string()).collect())
-        .collect();
+        .map(|e| e.vec.into_iter().map(|v| v as f32).collect())
+        .collect()
 }
